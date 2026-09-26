@@ -1,0 +1,12 @@
+run_id,timestamp,blocking_recall_at_20,blocking_recall_at_50,validation_precision,validation_recall,validation_f_beta,synthetic_pass_rate,predicted_singleton_rate,actual_singleton_rate,worst_false_positive,worst_false_negative,notes
+smoke_train_2000_target_10000,2026-09-25,0.0013297872,0.0013297872,0.9931192661,0.0745412844,0.0762614679,1.0,,,same_name_different_address,transliteration,limited_target_slice_not_quality_estimate
+linked_target_blocking_500,2026-09-25,0.9966254218,0.9994375703,,,,1.0,,,exact_name_collision,transliteration,linked_targets_plus_no_random_distractors_not_full_pool
+us_keyscore_b5000_cap50,2026-09-25,0.8319802841,0.8508263265,,,,1.0,,,,,baseline_no_rerank_bucket5000_cap50_2000entities_6898links_70ms_per_entity
+us_rerank_b5000_s1000,2026-09-25,0.8884026258,0.9044493071,,,,1.0,,,,,two_stage_rerank_bucket5000_stage1_1000_404entities_130ms_per_entity
+us_rerank_b5000_s2000,2026-09-25,0.9080962801,0.9277899344,,,,1.0,,,,,two_stage_rerank_bucket5000_stage1_2000_404entities_157ms_per_entity_chosen_default
+us_rerank_b5000_s5000,2026-09-25,0.9132020423,0.9358132749,,,,1.0,,,,,two_stage_rerank_bucket5000_stage1_5000_404entities_272ms_per_entity
+us_rerank_b10000_s2000,2026-09-25,0.9161196207,0.9328956966,,,,1.0,,,,,two_stage_rerank_bucket10000_stage1_2000_404entities
+us_rerank_b10000_s5000,2026-09-25,0.9204959883,0.9387308534,,,,1.0,,,,,two_stage_rerank_bucket10000_stage1_5000_404entities
+us_rerank_b20000_s2000,2026-09-25,0.9307075128,0.9474835886,,,,1.0,,,,,two_stage_rerank_bucket20000_stage1_2000_404entities_478ms_per_entity_too_slow_for_full_run
+us_rerank_b20000_s5000,2026-09-25,0.9328956966,0.9504011670,,,,1.0,,,,,best_measured_blocking_recall_404entities_slowest_config
+us_model_stage1_2000_40k,2026-09-26,0.9032797615,0.9186604611,0.9725548744,0.8505861944,0.9196268080,1.0,,,same_name_different_address,transliteration,hist_gradient_boosting_32054_train_7946_valid_threshold_0.9_positives_101557_negatives_250000_training_wall_2h40m

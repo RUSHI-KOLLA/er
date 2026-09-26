@@ -1,0 +1,6 @@
+{"run_id":"eda_sample_20000","split":"test","source":1,"flag":"address_without_numbers","count":786}
+{"run_id":"eda_sample_20000","split":"test","source":2,"flag":"blank_address","count":538}
+{"run_id":"eda_sample_20000","split":"test","source":3,"flag":"blank_address","count":528}
+{"run_id":"eda_sample_20000","split":"test","source":2,"flag":"multiple_legal_suffixes","count":2726}
+{"run_id":"eda_sample_20000","split":"test","source":3,"flag":"multiple_legal_suffixes","count":3235}
+{"run_id":"eda_sample_20000","split":"test","source":1,"observation":"France label present; country remains open-string normalized"}

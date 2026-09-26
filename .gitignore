@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+student_resource/code/business_entity_resolution/artifacts/
+student_resource/output/
+*.postings/
