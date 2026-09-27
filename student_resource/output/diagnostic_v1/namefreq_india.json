@@ -1,0 +1,134 @@
+{
+  "buckets": {
+    "2-5": {
+      "pairs": 38708,
+      "tp": 2706,
+      "pred": 2955,
+      "true": 3299,
+      "precision": 0.915736040609137,
+      "recall": 0.8202485601697485
+    },
+    "1": {
+      "pairs": 48467,
+      "tp": 2893,
+      "pred": 3739,
+      "true": 3441,
+      "precision": 0.7737362931265044,
+      "recall": 0.8407439697762279
+    },
+    "6-10": {
+      "pairs": 10165,
+      "tp": 558,
+      "pred": 610,
+      "true": 850,
+      "precision": 0.9147540983606557,
+      "recall": 0.6564705882352941
+    },
+    "51-100": {
+      "pairs": 32289,
+      "tp": 630,
+      "pred": 694,
+      "true": 756,
+      "precision": 0.9077809798270894,
+      "recall": 0.8333333333333334
+    },
+    "11-50": {
+      "pairs": 16521,
+      "tp": 454,
+      "pred": 507,
+      "true": 1024,
+      "precision": 0.8954635108481263,
+      "recall": 0.443359375
+    },
+    ">100": {
+      "pairs": 3182,
+      "tp": 101,
+      "pred": 128,
+      "true": 126,
+      "precision": 0.7890625,
+      "recall": 0.8015873015873016
+    }
+  },
+  "top_names": [
+    [
+      "apex",
+      842
+    ],
+    [
+      "helios",
+      812
+    ],
+    [
+      "vision center",
+      811
+    ],
+    [
+      "mumbai services",
+      691
+    ],
+    [
+      "emerald",
+      659
+    ],
+    [
+      "vision care",
+      611
+    ],
+    [
+      "new delhi services",
+      508
+    ],
+    [
+      "mumbai india",
+      483
+    ],
+    [
+      "mumbai center",
+      450
+    ],
+    [
+      "kolkata services",
+      448
+    ],
+    [
+      "united center",
+      434
+    ],
+    [
+      "new delhi india",
+      423
+    ],
+    [
+      "blue center",
+      423
+    ],
+    [
+      "global center",
+      411
+    ],
+    [
+      "shree services",
+      384
+    ],
+    [
+      "great center",
+      368
+    ],
+    [
+      "delhi services",
+      355
+    ],
+    [
+      "delta center",
+      323
+    ],
+    [
+      "capital center",
+      320
+    ],
+    [
+      "green services",
+      316
+    ]
+  ]
+}

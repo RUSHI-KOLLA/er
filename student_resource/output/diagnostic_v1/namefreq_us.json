@@ -1,0 +1,134 @@
+{
+  "buckets": {
+    "1": {
+      "pairs": 57040,
+      "tp": 3554,
+      "pred": 3672,
+      "true": 3891,
+      "precision": 0.9678649237472767,
+      "recall": 0.9133898740683629
+    },
+    ">100": {
+      "pairs": 26566,
+      "tp": 714,
+      "pred": 727,
+      "true": 748,
+      "precision": 0.9821182943603851,
+      "recall": 0.9545454545454546
+    },
+    "2-5": {
+      "pairs": 37030,
+      "tp": 3041,
+      "pred": 3106,
+      "true": 3245,
+      "precision": 0.9790727623953638,
+      "recall": 0.9371340523882897
+    },
+    "6-10": {
+      "pairs": 10809,
+      "tp": 709,
+      "pred": 737,
+      "true": 773,
+      "precision": 0.9620081411126187,
+      "recall": 0.9172056921086675
+    },
+    "51-100": {
+      "pairs": 6090,
+      "tp": 200,
+      "pred": 200,
+      "true": 216,
+      "precision": 1.0,
+      "recall": 0.9259259259259259
+    },
+    "11-50": {
+      "pairs": 12270,
+      "tp": 572,
+      "pred": 592,
+      "true": 671,
+      "precision": 0.9662162162162162,
+      "recall": 0.8524590163934426
+    }
+  },
+  "top_names": [
+    [
+      "meridian",
+      1389
+    ],
+    [
+      "physical therapy",
+      1134
+    ],
+    [
+      "primary care",
+      1132
+    ],
+    [
+      "pediatric dental",
+      1055
+    ],
+    [
+      "womens health",
+      1038
+    ],
+    [
+      "urgent care",
+      1032
+    ],
+    [
+      "family center",
+      1030
+    ],
+    [
+      "pediatric dentistry",
+      1002
+    ],
+    [
+      "behavioral health",
+      991
+    ],
+    [
+      "internal medicine",
+      990
+    ],
+    [
+      "summit",
+      874
+    ],
+    [
+      "cascade",
+      858
+    ],
+    [
+      "apex",
+      842
+    ],
+    [
+      "cedar",
+      835
+    ],
+    [
+      "sterling",
+      816
+    ],
+    [
+      "helios",
+      812
+    ],
+    [
+      "vision center",
+      811
+    ],
+    [
+      "anchor",
+      803
+    ],
+    [
+      "lynx",
+      799
+    ],
+    [
+      "pinnacle",
+      788
+    ]
+  ]
+}

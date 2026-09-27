@@ -13,7 +13,12 @@ import sqlite3
 from typing import Iterable
 import zlib
 
-from .block import BlockingIndex, CandidateEvidence, SqliteBlockingIndex
+from .block import (
+    BlockingIndex,
+    CandidateEvidence,
+    SqliteBlockingIndex,
+    set_similarity_cache_limit,
+)
 from .config import DEFAULT_SETTINGS, Settings
 from .evaluation import entity_level_split
 from .features import extract_pair_features, feature_names
@@ -92,6 +97,8 @@ def _iter_queries(
     country_fallback_limit: int,
     batch_size: int = DEFAULT_SETTINGS.query_batch_size,
     stage1: int | None = None,
+    start_ordinal: int = 0,
+    stop_ordinal: int | None = None,
 ) -> Iterable[
     tuple[
         int,
@@ -100,7 +107,15 @@ def _iter_queries(
         dict[str, NormalizedRecord],
     ]
 ]:
-    ordinal = 0
+    if start_ordinal < 0:
+        raise ValueError("start_ordinal must be non-negative")
+    if stop_ordinal is not None:
+        if stop_ordinal < start_ordinal:
+            raise ValueError("stop_ordinal must not precede start_ordinal")
+        records = islice(records, start_ordinal, stop_ordinal)
+    elif start_ordinal:
+        records = islice(records, start_ordinal, None)
+    ordinal = start_ordinal
     for batch in _batched(records, batch_size):
         evidence_batch, target_map = index.query_many_with_targets(
             batch,
@@ -300,6 +315,20 @@ def _write_streaming_matches(
             writer.writerow((source1_id, ",".join(matched_ids)))
 
 
+_CLAIMS_SQL = """
+                INSERT INTO claims (candidate_id, source1_id, score)
+                SELECT candidate_id, source1_id, score
+                FROM qualified_pairs
+                WHERE 1
+                ON CONFLICT(candidate_id) DO UPDATE SET
+                    source1_id = excluded.source1_id,
+                    score = excluded.score
+                WHERE excluded.score > claims.score
+                   OR (excluded.score = claims.score
+                       AND excluded.source1_id < claims.source1_id)
+                """
+
+
 def _flush_feature_batch(
     connection: sqlite3.Connection,
     pending: list[tuple[str, list[CandidateEvidence], list[dict[str, float]]]],
@@ -343,6 +372,8 @@ def run_inference_streaming(
     country: str | None = None,
     stage1: int | None = None,
     shard: tuple[int, int] | None = None,
+    start_ordinal: int = 0,
+    stop_ordinal: int | None = None,
 ) -> PipelineSummary:
     if candidate_cap < 1:
         raise ValueError("candidate_cap must be positive")
@@ -414,6 +445,8 @@ def run_inference_streaming(
                 candidate_cap,
                 country_fallback_limit,
                 stage1=stage1,
+                start_ordinal=start_ordinal,
+                stop_ordinal=stop_ordinal,
             ):
                 source1_id = reference.raw.entity_id
                 connection.execute(
@@ -470,20 +503,7 @@ def run_inference_streaming(
             candidate_handle.flush()
         connection.commit()
         if enforce_exclusivity:
-            connection.execute(
-                """
-                INSERT INTO claims (candidate_id, source1_id, score)
-                SELECT candidate_id, source1_id, score
-                FROM qualified_pairs
-                WHERE 1
-                ON CONFLICT(candidate_id) DO UPDATE SET
-                    source1_id = excluded.source1_id,
-                    score = excluded.score
-                WHERE excluded.score > claims.score
-                   OR (excluded.score = claims.score
-                       AND excluded.source1_id < claims.source1_id)
-                """
-            )
+            connection.execute(_CLAIMS_SQL)
             connection.commit()
             matched_edge_count = connection.execute("SELECT COUNT(*) FROM claims").fetchone()[0]
         else:
@@ -756,6 +776,9 @@ def _run_shard_worker(
     source1_limit: int | None,
     enforce_exclusivity: bool,
     bucket_limit: int,
+    start_ordinal: int = 0,
+    stop_ordinal: int | None = None,
+    keep_work: bool = False,
 ) -> None:
     index = SqliteBlockingIndex(index_path, bucket_limit=bucket_limit)
     try:
@@ -770,12 +793,178 @@ def _run_shard_worker(
             stage1=stage1,
             source1_limit=source1_limit,
             enforce_exclusivity=enforce_exclusivity,
+            keep_work=keep_work,
             country=country,
             shard=shard,
+            start_ordinal=start_ordinal,
+            stop_ordinal=stop_ordinal,
         )
     finally:
         index.close()
     _write_json(output_dir / "shard_summary.json", asdict(summary))
+
+
+def merge_shard_parts(
+    shard_dir: Path,
+    part_dirs: list[Path],
+    keep_ordinal_limit: int,
+    expected_source1_count: int,
+) -> dict[str, object]:
+    if keep_ordinal_limit < 0:
+        raise ValueError("keep_ordinal_limit must be non-negative")
+    if expected_source1_count < 1:
+        raise ValueError("expected_source1_count must be positive")
+    old_work = shard_dir / "scoring.sqlite"
+    if not old_work.exists():
+        raise RuntimeError(f"{shard_dir.name}: missing partial scoring.sqlite")
+    old_candidates_path = shard_dir / "candidate_pairs.tsv.tmp"
+    if not old_candidates_path.exists():
+        old_candidates_path = shard_dir / "candidate_pairs.tsv"
+    with old_candidates_path.open(encoding="utf-8", newline="") as handle:
+        reader = csv.reader(handle, delimiter="\t")
+        if tuple(next(reader, None) or ()) != CANDIDATE_HEADER:
+            raise RuntimeError(f"{shard_dir.name}: unexpected candidate header")
+        old_rows = [row for row in reader if row]
+    if len(old_rows) < keep_ordinal_limit:
+        raise RuntimeError(
+            f"{shard_dir.name}: {len(old_rows)} candidate rows below keep limit"
+            f" {keep_ordinal_limit}"
+        )
+    candidates_by_id = {row[0]: row[1] for row in old_rows[:keep_ordinal_limit]}
+    if len(candidates_by_id) != keep_ordinal_limit:
+        raise RuntimeError(f"{shard_dir.name}: duplicate source1 ids in kept rows")
+    for part_dir in part_dirs:
+        part_path = part_dir / "candidate_pairs.tsv"
+        with part_path.open(encoding="utf-8", newline="") as handle:
+            reader = csv.reader(handle, delimiter="\t")
+            if tuple(next(reader, None) or ()) != CANDIDATE_HEADER:
+                raise RuntimeError(f"{part_dir.name}: unexpected candidate header")
+            for row in reader:
+                if not row:
+                    continue
+                if row[0] in candidates_by_id:
+                    raise RuntimeError(
+                        f"{shard_dir.name}: source1 {row[0]} present in kept rows and parts"
+                    )
+                candidates_by_id[row[0]] = row[1]
+    merge_path = shard_dir / "merged.sqlite"
+    merge_path.unlink(missing_ok=True)
+    connection = sqlite3.connect(merge_path)
+    try:
+        connection.executescript(
+            """
+            CREATE TABLE source1_order (
+                ordinal INTEGER PRIMARY KEY,
+                source1_id TEXT NOT NULL UNIQUE
+            );
+            CREATE TABLE qualified_pairs (
+                source1_id TEXT NOT NULL,
+                candidate_id TEXT NOT NULL,
+                score REAL NOT NULL,
+                PRIMARY KEY (source1_id, candidate_id)
+            );
+            CREATE TABLE claims (
+                candidate_id TEXT PRIMARY KEY,
+                source1_id TEXT NOT NULL,
+                score REAL NOT NULL
+            );
+            """
+        )
+        connection.execute("ATTACH DATABASE ? AS old", (str(old_work),))
+        connection.execute(
+            "INSERT INTO source1_order SELECT ordinal, source1_id FROM old.source1_order"
+            " WHERE ordinal < ?",
+            (keep_ordinal_limit,),
+        )
+        kept_count = connection.execute("SELECT COUNT(*) FROM source1_order").fetchone()[0]
+        if kept_count != keep_ordinal_limit:
+            raise RuntimeError(
+                f"{shard_dir.name}: kept {kept_count} source1 rows,"
+                f" expected {keep_ordinal_limit}"
+            )
+        connection.execute(
+            "INSERT INTO qualified_pairs SELECT source1_id, candidate_id, score"
+            " FROM old.qualified_pairs"
+            " WHERE source1_id IN (SELECT source1_id FROM source1_order)"
+        )
+        for index, part_dir in enumerate(part_dirs):
+            alias = f"part{index}"
+            connection.execute(
+                f"ATTACH DATABASE ? AS {alias}", (str(part_dir / "scoring.sqlite"),)
+            )
+            connection.execute(
+                f"INSERT INTO source1_order SELECT ordinal, source1_id"
+                f" FROM {alias}.source1_order"
+            )
+            connection.execute(
+                f"INSERT INTO qualified_pairs SELECT source1_id, candidate_id, score"
+                f" FROM {alias}.qualified_pairs"
+            )
+        connection.commit()
+        merged_count = connection.execute("SELECT COUNT(*) FROM source1_order").fetchone()[0]
+        if merged_count != expected_source1_count:
+            raise RuntimeError(
+                f"{shard_dir.name}: merged {merged_count} source1 rows,"
+                f" expected {expected_source1_count}"
+            )
+        ordered_ids = [
+            row[0]
+            for row in connection.execute(
+                "SELECT source1_id FROM source1_order ORDER BY ordinal"
+            )
+        ]
+        missing = [source1_id for source1_id in ordered_ids if source1_id not in candidates_by_id]
+        if missing:
+            raise RuntimeError(
+                f"{shard_dir.name}: {len(missing)} source1 rows without candidate rows"
+            )
+        if len(candidates_by_id) != expected_source1_count:
+            raise RuntimeError(
+                f"{shard_dir.name}: {len(candidates_by_id)} candidate rows,"
+                f" expected {expected_source1_count}"
+            )
+        connection.execute(_CLAIMS_SQL)
+        connection.commit()
+        qualified_count = connection.execute(
+            "SELECT COUNT(*) FROM qualified_pairs"
+        ).fetchone()[0]
+        matched_edge_count = connection.execute("SELECT COUNT(*) FROM claims").fetchone()[0]
+        matching_tmp = shard_dir / "matching_results.tsv.tmp"
+        _write_streaming_matches(connection, matching_tmp, True)
+        candidate_edge_count = 0
+        candidate_tmp = shard_dir / "candidate_pairs.tsv.tmp"
+        with candidate_tmp.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle, delimiter="\t", lineterminator="\n")
+            writer.writerow(CANDIDATE_HEADER)
+            for source1_id in ordered_ids:
+                value = candidates_by_id[source1_id]
+                writer.writerow((source1_id, value))
+                if value:
+                    candidate_edge_count += value.count(",") + 1
+        candidate_tmp.replace(shard_dir / "candidate_pairs.tsv")
+        matching_tmp.replace(shard_dir / "matching_results.tsv")
+    finally:
+        connection.close()
+    summary: dict[str, object] = {
+        "source1_count": expected_source1_count,
+        "candidate_edge_count": candidate_edge_count,
+        "matched_edge_count": matched_edge_count,
+        "collision_count": qualified_count - matched_edge_count,
+        "complete": True,
+    }
+    _write_json(shard_dir / "shard_summary.json", summary)
+    for stale in (
+        shard_dir / ".incomplete",
+        shard_dir / "candidate_pairs.tsv.tmp",
+        old_work,
+        Path(f"{old_work}-wal"),
+        Path(f"{old_work}-shm"),
+        merge_path,
+        Path(f"{merge_path}-wal"),
+        Path(f"{merge_path}-shm"),
+    ):
+        stale.unlink(missing_ok=True)
+    return summary
 
 
 def _run_sharded_country(
@@ -826,6 +1015,8 @@ def _run_sharded_country(
                     "source1_limit": arguments.source1_limit,
                     "enforce_exclusivity": not arguments.no_exclusivity,
                     "bucket_limit": arguments.bucket_limit,
+                    "start_ordinal": arguments.start_ordinal,
+                    "stop_ordinal": arguments.stop_ordinal,
                 },
             )
         )
@@ -1031,6 +1222,8 @@ def _run_infer_command(arguments: argparse.Namespace) -> int:
         raise ValueError("--shard-count must be positive")
     if arguments.shard_count > 1 and not arguments.partition_by_country:
         raise ValueError("--shard-count requires --partition-by-country")
+    if arguments.similarity_cache:
+        set_similarity_cache_limit(arguments.similarity_cache)
     if arguments.partition_by_country:
         if arguments.index_db:
             raise ValueError(
@@ -1040,6 +1233,19 @@ def _run_infer_command(arguments: argparse.Namespace) -> int:
         countries = _discover_countries(source1_path)
         if not countries:
             raise ValueError(f"no countries found in {source1_path}")
+        if arguments.countries:
+            wanted = {
+                name.strip().lower()
+                for name in arguments.countries.split(",")
+                if name.strip()
+            }
+            countries = [name for name in countries if name in wanted]
+            missing = wanted - set(countries)
+            if missing:
+                raise ValueError(
+                    f"--countries names absent from {source1_path.name}: "
+                    f"{', '.join(sorted(missing))}"
+                )
         return _run_partitioned_inference(
             settings,
             arguments,
@@ -1080,6 +1286,8 @@ def _run_infer_command(arguments: argparse.Namespace) -> int:
             enforce_exclusivity=not arguments.no_exclusivity,
             keep_work=arguments.keep_work,
             country=country,
+            start_ordinal=arguments.start_ordinal,
+            stop_ordinal=arguments.stop_ordinal,
         )
     finally:
         if isinstance(index, SqliteBlockingIndex):
@@ -1148,7 +1356,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     infer_parser.add_argument("--no-exclusivity", action="store_true")
     infer_parser.add_argument("--keep-work", action="store_true")
+    infer_parser.add_argument("--start-ordinal", type=int, default=0)
+    infer_parser.add_argument("--stop-ordinal", type=int, default=None)
     infer_parser.add_argument("--country", default=None, help="restrict index and queries to one country")
+    infer_parser.add_argument(
+        "--countries",
+        default=None,
+        help="comma-separated subset of countries to process; requires --partition-by-country",
+    )
+    infer_parser.add_argument(
+        "--similarity-cache",
+        type=int,
+        default=None,
+        help="entries in the per-worker rerank similarity cache (lower = less RAM)",
+    )
     infer_parser.add_argument(
         "--shard-count",
         type=int,

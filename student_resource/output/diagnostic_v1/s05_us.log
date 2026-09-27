@@ -1,0 +1,15 @@
+model kind=hist_gradient_boosting threshold=0.9 features=34
+loaded samples=3000 elapsed=1.9s
+us: s1=3000 wanted_targets=145494
+us: targets indexes=['targets_country', 'sqlite_autoindex_targets_1']
+us: targets_fetched=145494 elapsed=7.7s
+us: pairs=149805 elapsed=41.1s
+us: scored 20000/149805 elapsed=41.4s
+us: scored 40000/149805 elapsed=41.5s
+us: scored 60000/149805 elapsed=41.6s
+us: scored 80000/149805 elapsed=41.7s
+us: scored 100000/149805 elapsed=41.7s
+us: scored 120000/149805 elapsed=41.8s
+us: scored 140000/149805 elapsed=41.9s
+us: scored 149805/149805 elapsed=41.9s
+DONE elapsed=42.0s

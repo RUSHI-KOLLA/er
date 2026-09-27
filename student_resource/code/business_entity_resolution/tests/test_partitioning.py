@@ -176,6 +176,73 @@ class PartitioningTests(unittest.TestCase):
             )
             self.assertIn('"partitioned_by_country": true', summary)
 
+    def test_countries_filter_processes_only_requested_country(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data_root = root / "dataset"
+            output_dir = root / "output"
+            _write(
+                data_root / "test" / "test_source1.tsv",
+                [
+                    ("S1-1", "Acme Limited", "12 Park Road", "US"),
+                    ("S1-2", "Bistro Chez", "5 Rue Victor Hugo", "FR"),
+                ],
+            )
+            _write(
+                data_root / "test" / "test_source2.tsv",
+                [
+                    ("S2-1", "Acme Limited", "12 Park Road", "US"),
+                    ("S2-2", "Bistro Chez", "5 Rue Victor Hugo", "FR"),
+                ],
+            )
+            _write(
+                data_root / "test" / "test_source3.tsv",
+                [("S3-1", "Acme Private Limited", "12 Park Road", "US")],
+            )
+            exit_code = main(
+                [
+                    "infer",
+                    "--data-root",
+                    str(data_root),
+                    "--output-dir",
+                    str(output_dir),
+                    "--split",
+                    "test",
+                    "--heuristic",
+                    "--threshold",
+                    "0.5",
+                    "--partition-by-country",
+                    "--countries",
+                    "us",
+                ]
+            )
+            self.assertEqual(exit_code, 0)
+            self.assertFalse((output_dir / "parts" / "fr").exists())
+            self.assertTrue((output_dir / "parts" / "us" / "matching_results.tsv").exists())
+            candidate_rows = read_output_rows(
+                output_dir / "candidate_pairs.tsv",
+                ("source1_entity_id", "candidate_entity_ids"),
+            )
+            self.assertEqual(set(candidate_rows), {"S1-1"})
+            with self.assertRaises(ValueError):
+                main(
+                    [
+                        "infer",
+                        "--data-root",
+                        str(data_root),
+                        "--output-dir",
+                        str(output_dir),
+                        "--split",
+                        "test",
+                        "--heuristic",
+                        "--threshold",
+                        "0.5",
+                        "--partition-by-country",
+                        "--countries",
+                        "zz",
+                    ]
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -45,6 +45,11 @@ _SIMILARITY_CACHE_LIMIT = 20_000
 _LIGHT_RE = re.compile(r"[^a-z0-9]+")
 
 
+def set_similarity_cache_limit(limit: int) -> None:
+    global _SIMILARITY_CACHE_LIMIT
+    _SIMILARITY_CACHE_LIMIT = max(1_000, int(limit))
+
+
 def _folded_sets(text: str) -> tuple[set[int], set[str]]:
     folded = _LIGHT_RE.sub(" ", text.lower()).strip()
     padded = folded.replace(" ", "_")

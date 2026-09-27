@@ -1,0 +1,20 @@
+pilot train entities=8000 elapsed=6.5s
+queried 64/8000 elapsed=14.7s
+queried 704/8000 elapsed=79.8s
+queried 1344/8000 elapsed=149.3s
+queried 1984/8000 elapsed=217.7s
+queried 2624/8000 elapsed=288.8s
+queried 3264/8000 elapsed=360.0s
+queried 3904/8000 elapsed=432.8s
+queried 4544/8000 elapsed=507.6s
+queried 5184/8000 elapsed=583.6s
+queried 5824/8000 elapsed=660.8s
+queried 6464/8000 elapsed=733.9s
+queried 7104/8000 elapsed=809.9s
+queried 7744/8000 elapsed=887.9s
+candidates done elapsed=918.3s
+examples=174990 pos=24990 neg=150000 elapsed=1138.0s
+pilot model kind=hist_gradient_boosting elapsed=1141.3s
+PILOT-india: th=0.77 F05=0.8511 P=0.9352 R=0.7663 F1=0.8055 edges=149332 elapsed=1246.5s
+PILOT-us: th=0.79 F05=0.8694 P=0.9525 R=0.7796 F1=0.8230 edges=149805 elapsed=1327.0s
+DONE elapsed=1327.0s

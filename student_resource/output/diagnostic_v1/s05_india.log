@@ -1,0 +1,15 @@
+model kind=hist_gradient_boosting threshold=0.9 features=34
+loaded samples=3000 elapsed=1.3s
+india: s1=3000 wanted_targets=140997
+india: targets indexes=['targets_country', 'sqlite_autoindex_targets_1']
+india: targets_fetched=140997 elapsed=2.9s
+india: pairs=149332 elapsed=78.3s
+india: scored 20000/149332 elapsed=78.6s
+india: scored 40000/149332 elapsed=78.7s
+india: scored 60000/149332 elapsed=78.8s
+india: scored 80000/149332 elapsed=78.9s
+india: scored 100000/149332 elapsed=79.0s
+india: scored 120000/149332 elapsed=79.1s
+india: scored 140000/149332 elapsed=79.2s
+india: scored 149332/149332 elapsed=79.2s
+DONE elapsed=79.3s

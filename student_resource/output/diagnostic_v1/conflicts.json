@@ -1,0 +1,14 @@
+{
+  "total_edges": 5566403,
+  "multiplicity": {
+    "1": 5273242,
+    "2": 85466,
+    "3": 17635,
+    "4": 7289,
+    "5": 4238,
+    "6": 3163
+  },
+  "edges_on_conflicted_targets": 293161,
+  "distinct_conflicted_targets": 117791,
+  "conflicted_edge_frac": 0.052666147240866316
+}

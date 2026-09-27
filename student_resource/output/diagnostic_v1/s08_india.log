@@ -1,0 +1,4 @@
+india: watch entities=145004 distinct names=85892
+india: freq counted elapsed=237.8s
+india: {"1": {"pairs": 48467, "tp": 2893, "pred": 3739, "true": 3441, "precision": 0.7737, "recall": 0.8407}, "11-50": {"pairs": 16521, "tp": 454, "pred": 507, "true": 1024, "precision": 0.8955, "recall": 0.4434}, "2-5": {"pairs": 38708, "tp": 2706, "pred": 2955, "true": 3299, "precision": 0.9157, "recall": 0.8202}, "51-100": {"pairs": 32289, "tp": 630, "pred": 694, "true": 756, "precision": 0.9078, "recall": 0.8333}, "6-10": {"pairs": 10165, "tp": 558, "pred": 610, "true": 850, "precision": 0.9148, "recall": 0.6565}, ">100": {"pairs": 3182, "tp": 101, "pred": 128, "true": 126, "precision": 0.7891, "recall": 0.8016}}
+DONE

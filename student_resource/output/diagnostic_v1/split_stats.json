@@ -1,0 +1,27 @@
+{
+  "diag_valid_overlap_model_train": 0,
+  "model_40k_us_selection": 40000,
+  "model_train": 32054,
+  "model_valid": 7946,
+  "s1_total": 2206821,
+  "split_train": 1765800,
+  "split_valid": 441021,
+  "train_side_edges": 6111222,
+  "valid_edges": 1527143,
+  "valid_nonsingletons": 416510,
+  "valid_per_country": {
+    "india": {
+      "edges": 613066,
+      "s1": 176783,
+      "singletons": 9841
+    },
+    "us": {
+      "edges": 914077,
+      "s1": 264238,
+      "singletons": 14670
+    }
+  },
+  "valid_s2_edges": 737878,
+  "valid_s3_edges": 789265,
+  "valid_singletons": 24511
+}
